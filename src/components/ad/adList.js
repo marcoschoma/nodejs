@@ -2,24 +2,24 @@
 
 var React = require('react');
 var _ = require('lodash');
-var AdApi = require('../../api/ad/adApi');
+
+var AdItem = require('./adItem');
 var DiscountApi = require('../../api/discount/discountApi');
 var CheckoutApi = require('../../api/checkout/checkoutApi')
 
 var AdList = React.createClass({
+	propTypes: {
+		ads: React.PropTypes.array.isRequired,
+		discounts: React.PropTypes.array.isRequired
+	},
 	getInitialState: function() {
-		var discounts = DiscountApi.getDiscountByCustomerId(this.props.customerId);
 		return {
-			ads: null,
 			lookupAd: [],
-			discounts: discounts
 		}
 	},
 	componentDidMount: function() {
-		var data = AdApi.getAllAds();
 		var lookupAd = {};
-
-		var tmpAds = data
+		var tmpAds = this.props.ads
 				.map(ad => {
 					ad.quantity = 0;
 					ad.subTotalPrice = 0;
@@ -28,26 +28,17 @@ var AdList = React.createClass({
 		tmpAds.forEach((ad) => lookupAd[ad.id] = tmpAds.indexOf(ad));
 
 		this.setState({
-			ads: tmpAds,
 			lookupAd: lookupAd
 		});
 	},
 	updateQuantity: function (event) {
 		var id = parseInt(event.target.attributes.getNamedItem('data-id').value, 0)
-		const ads = this.state.ads
+		const ads = this.props.ads
 		const quantity = event.target.value
+		var newPrice = CheckoutApi.calculate(id, this.props.customerId, quantity);
 
 		ads[this.state.lookupAd[id]].quantity = quantity
-		this.setState({
-			ads: ads
-		})
-
-		this.updateSubTotalPrice(id, quantity)
-	},
-	updateSubTotalPrice: function(adId, quantity) {
-		var newPrice = CheckoutApi.calculate(adId, this.props.customerId, quantity);
-		const ads = this.state.ads
-		ads[this.state.lookupAd[adId]].subTotalPrice = Math.round(newPrice * 100) / 100;
+		ads[this.state.lookupAd[id]].subTotalPrice = Math.round(newPrice * 100) / 100;
 		this.setState({
 			ads: ads
 		});
@@ -60,18 +51,9 @@ var AdList = React.createClass({
 		};
 		var createAdItem = function(ad) {
 			return (
-				<div>
-					<div className="col-xs-9" key={'desc_' + ad.id}>
-						<h3>{ad.name}</h3>
-						<div className="col-xs-3" key={'price_' + ad.id}>
-							Preço: ${ ad.price }
-						</div>
-						<div className="col-xs-9" key={'qtd_' + ad.id}>
-							Quantidade: <input type="number" min="0" max="1000" data-id={ad.id} onChange={this.updateQuantity} />
-						</div>
-					</div>
-					<div className="col-xs-3" key={'subtot_' + ad.id}>
-						Sub total: ${ ad.subTotalPrice }
+				<div key={'ad_container_' + ad.id}>
+					<div className="col-xs-12" key={'desc_' + ad.id}>
+						<AdItem key={'ad_item_' + ad.id} ad={ad} updateQuantity={this.updateQuantity} />
 					</div>
 				</div>
 			)
@@ -79,12 +61,12 @@ var AdList = React.createClass({
 		return (
 			<div>
 				<div className="col-md-12">
-					{ _.map(this.state.discounts, getDiscountInfo.bind(this)) }
-					{_.map(this.state.ads, createAdItem.bind(this))}
+					{ _.map(this.props.discounts, getDiscountInfo.bind(this)) }
+					{_.map(this.props.ads, createAdItem.bind(this))}
 				</div>
 				<div className="col-md-12">
 					<h3 className="pull-right">
-						Total: $ { parseInt(_.sumBy(this.state.ads, 'subTotalPrice')* 100) / 100 }
+						Total: $ { parseInt(_.sumBy(this.props.ads, 'subTotalPrice')* 100) / 100 }
 					</h3>
 				</div>
 			</div>

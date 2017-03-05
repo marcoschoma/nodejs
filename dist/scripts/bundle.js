@@ -47963,10 +47963,6 @@ module.exports = [
 	{
 		id: 5,
 		name: 'Default'
-	},
-	{
-		id: 6,
-		name: 'Novo cliente'
 	}
 ];
 
@@ -48088,26 +48084,54 @@ module.exports = [
 },{}],188:[function(require,module,exports){
 "use strict";
 
+var React = require('react')
+var AdQuantity = require('./adQuantity');
+var AdSubTotal = require('./adSubTotal');
+
+var AdItem = React.createClass({displayName: "AdItem",
+	render: function() {
+		return (
+			React.createElement("div", {key: 'ad_item_div_' + this.props.ad.id}, 
+				React.createElement("h3", {key: 'ad_item_name_' + this.props.ad.id}, this.props.ad.name), 
+				React.createElement("div", {className: "col-xs-3", key: 'ad_item_' + this.props.ad.id + '_price_' + this.props.ad.id}, 
+					"Price: $",  this.props.ad.price
+				), 
+				React.createElement(AdQuantity, {key: 'ad_qtty_' + this.props.ad.id, ad: this.props.ad, updateQuantity: this.props.updateQuantity}), 
+				React.createElement(AdSubTotal, {key: 'ad_suttot_' + this.props.ad.id, ad: this.props.ad})
+			)
+		)
+	},
+	propTypes: {
+		ad: React.PropTypes.object.isRequired,
+		updateQuantity: React.PropTypes.func.isRequired
+	}
+});
+
+module.exports = AdItem;
+
+},{"./adQuantity":190,"./adSubTotal":191,"react":180}],189:[function(require,module,exports){
+"use strict";
+
 var React = require('react');
 var _ = require('lodash');
-var AdApi = require('../../api/ad/adApi');
+
+var AdItem = require('./adItem');
 var DiscountApi = require('../../api/discount/discountApi');
 var CheckoutApi = require('../../api/checkout/checkoutApi')
 
 var AdList = React.createClass({displayName: "AdList",
+	propTypes: {
+		ads: React.PropTypes.array.isRequired,
+		discounts: React.PropTypes.array.isRequired
+	},
 	getInitialState: function() {
-		var discounts = DiscountApi.getDiscountByCustomerId(this.props.customerId);
 		return {
-			ads: null,
 			lookupAd: [],
-			discounts: discounts
 		}
 	},
 	componentDidMount: function() {
-		var data = AdApi.getAllAds();
 		var lookupAd = {};
-
-		var tmpAds = data
+		var tmpAds = this.props.ads
 				.map(ad => {
 					ad.quantity = 0;
 					ad.subTotalPrice = 0;
@@ -48116,26 +48140,17 @@ var AdList = React.createClass({displayName: "AdList",
 		tmpAds.forEach((ad) => lookupAd[ad.id] = tmpAds.indexOf(ad));
 
 		this.setState({
-			ads: tmpAds,
 			lookupAd: lookupAd
 		});
 	},
 	updateQuantity: function (event) {
 		var id = parseInt(event.target.attributes.getNamedItem('data-id').value, 0)
-		const ads = this.state.ads
+		const ads = this.props.ads
 		const quantity = event.target.value
+		var newPrice = CheckoutApi.calculate(id, this.props.customerId, quantity);
 
 		ads[this.state.lookupAd[id]].quantity = quantity
-		this.setState({
-			ads: ads
-		})
-
-		this.updateSubTotalPrice(id, quantity)
-	},
-	updateSubTotalPrice: function(adId, quantity) {
-		var newPrice = CheckoutApi.calculate(adId, this.props.customerId, quantity);
-		const ads = this.state.ads
-		ads[this.state.lookupAd[adId]].subTotalPrice = Math.round(newPrice * 100) / 100;
+		ads[this.state.lookupAd[id]].subTotalPrice = Math.round(newPrice * 100) / 100;
 		this.setState({
 			ads: ads
 		});
@@ -48148,18 +48163,9 @@ var AdList = React.createClass({displayName: "AdList",
 		};
 		var createAdItem = function(ad) {
 			return (
-				React.createElement("div", null, 
-					React.createElement("div", {className: "col-xs-9", key: 'desc_' + ad.id}, 
-						React.createElement("h3", null, ad.name), 
-						React.createElement("div", {className: "col-xs-3", key: 'price_' + ad.id}, 
-							"Preço: $",  ad.price
-						), 
-						React.createElement("div", {className: "col-xs-9", key: 'qtd_' + ad.id}, 
-							"Quantidade: ", React.createElement("input", {type: "number", min: "0", max: "1000", "data-id": ad.id, onChange: this.updateQuantity})
-						)
-					), 
-					React.createElement("div", {className: "col-xs-3", key: 'subtot_' + ad.id}, 
-						"Sub total: $",  ad.subTotalPrice
+				React.createElement("div", {key: 'ad_container_' + ad.id}, 
+					React.createElement("div", {className: "col-xs-12", key: 'desc_' + ad.id}, 
+						React.createElement(AdItem, {key: 'ad_item_' + ad.id, ad: ad, updateQuantity: this.updateQuantity})
 					)
 				)
 			)
@@ -48167,12 +48173,12 @@ var AdList = React.createClass({displayName: "AdList",
 		return (
 			React.createElement("div", null, 
 				React.createElement("div", {className: "col-md-12"}, 
-					 _.map(this.state.discounts, getDiscountInfo.bind(this)), 
-					_.map(this.state.ads, createAdItem.bind(this))
+					 _.map(this.props.discounts, getDiscountInfo.bind(this)), 
+					_.map(this.props.ads, createAdItem.bind(this))
 				), 
 				React.createElement("div", {className: "col-md-12"}, 
 					React.createElement("h3", {className: "pull-right"}, 
-						"Total: $ ",  parseInt(_.sumBy(this.state.ads, 'subTotalPrice')* 100) / 100
+						"Total: $ ",  parseInt(_.sumBy(this.props.ads, 'subTotalPrice')* 100) / 100
 					)
 				)
 			)
@@ -48183,16 +48189,70 @@ var AdList = React.createClass({displayName: "AdList",
 
 module.exports = AdList;
 
-},{"../../api/ad/adApi":181,"../../api/checkout/checkoutApi":183,"../../api/discount/discountApi":186,"lodash":25,"react":180}],189:[function(require,module,exports){
+},{"../../api/checkout/checkoutApi":183,"../../api/discount/discountApi":186,"./adItem":188,"lodash":25,"react":180}],190:[function(require,module,exports){
+"use strict";
+
+var React = require('react')
+
+var AdQuantity = React.createClass({displayName: "AdQuantity",
+	render: function() {
+		return (
+			React.createElement("div", {key: 'ad_qtty_div_' + this.props.ad.id, className: "col-xs-5"}, 
+				"Quantity: ", React.createElement("input", {type: "number", min: "0", max: "1000", "data-id": this.props.ad.id, onChange: this.props.updateQuantity})
+			)
+		)
+	},
+	propTypes: {
+		ad: React.PropTypes.object.isRequired,
+		updateQuantity: React.PropTypes.func.isRequired
+	}
+});
+
+module.exports = AdQuantity;
+
+},{"react":180}],191:[function(require,module,exports){
+"use strict";
+
+var React = require('react')
+
+var AdItem = React.createClass({displayName: "AdItem",
+	render: function() {
+		return (
+			React.createElement("div", {key: 'ad_subtot_div_' + this.props.ad.id, className: "col-xs-4"}, 
+				"Sub total: $",  this.props.ad.subTotalPrice
+			)
+		)
+	},
+	propTypes: {
+		ad: React.PropTypes.object.isRequired
+	}
+});
+
+module.exports = AdItem;
+
+},{"react":180}],192:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
 var CustomerList = require('./../customer/customerList');
 var AdList = require('../ad/adList');
 
+var AdApi = require('../../api/ad/adApi');
+var CheckoutApi = require('../../api/checkout/checkoutApi')
+var DiscountApi = require('../../api/discount/discountApi');
+
+
 var Checkout = React.createClass({displayName: "Checkout",
 	getInitialState: function() {
 		return {
+			ads: AdApi
+				.getAllAds()
+				.map(ad => {
+					ad.quantity = 0;
+					ad.subTotalPrice = 0;
+					return ad;
+				}),
+			discounts: [],
 			isShowCustomer: true,
 			isShowOffers: false,
 			isShowAds: false,
@@ -48201,6 +48261,7 @@ var Checkout = React.createClass({displayName: "Checkout",
 	},
 	customerSelectionHasChanged: function(customer) {
 		this.setState({
+			discounts: customer === null ? [] : DiscountApi.getDiscountByCustomerId(customer.id),
 			isShowCustomer: (customer === null),
 			isShowOffers: (customer !== null),
 			isShowAds: (customer !== null),
@@ -48212,7 +48273,7 @@ var Checkout = React.createClass({displayName: "Checkout",
 			if(this.state.isShowOffers === true) {
 				return (
 					React.createElement("div", null, 
-						React.createElement(AdList, {customerId: customerId})
+						React.createElement(AdList, {customerId: customerId, ads: this.state.ads, discounts: this.state.discounts})
 					)
 				);
 			}
@@ -48235,7 +48296,7 @@ var Checkout = React.createClass({displayName: "Checkout",
 
 module.exports = Checkout;
 
-},{"../ad/adList":188,"./../customer/customerList":191,"react":180}],190:[function(require,module,exports){
+},{"../../api/ad/adApi":181,"../../api/checkout/checkoutApi":183,"../../api/discount/discountApi":186,"../ad/adList":189,"./../customer/customerList":194,"react":180}],193:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -48260,7 +48321,7 @@ var CustomerItem = React.createClass({displayName: "CustomerItem",
 
 module.exports = CustomerItem;
 
-},{"react":180}],191:[function(require,module,exports){
+},{"react":180}],194:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -48321,8 +48382,8 @@ var CustomerList = React.createClass({displayName: "CustomerList",
 					this.state.selectedCustomer ? 
 					showSelectCustomer.bind(this)() : (
 					React.createElement("div", {className: "jumbotron"}, 
-						React.createElement("h2", null, "Bem vindo a AdStore."), 
-						React.createElement("p", null, "Selecione um cliente")
+						React.createElement("h2", null, "Welcome to AdStore"), 
+						React.createElement("p", null, "Please select a customer")
 					)
 				), 
 
@@ -48340,7 +48401,7 @@ module.exports = CustomerList;
 //<SelectedCustomer selectedCustomer={this.state.selectedCustomer} />
 //<button onClick={this.unselectCustomer} className="btn btn-default" alt="Trocar cliente">{this.state.selectedCustomer.name} </button>
 
-},{"../customer/selectedCustomer":192,"./../../api/customer/customerApi":184,"./customerItem":190,"lodash":25,"react":180}],192:[function(require,module,exports){
+},{"../customer/selectedCustomer":195,"./../../api/customer/customerApi":184,"./customerItem":193,"lodash":25,"react":180}],195:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -48358,7 +48419,7 @@ var SelectedCustomer = React.createClass({displayName: "SelectedCustomer",
 
 module.exports = SelectedCustomer;
 
-},{"react":180}],193:[function(require,module,exports){
+},{"react":180}],196:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -48375,7 +48436,7 @@ var Header = React.createClass({displayName: "Header",
 
 module.exports = Header;
 
-},{"react":180}],194:[function(require,module,exports){
+},{"react":180}],197:[function(require,module,exports){
 $ = jQuery = require('jquery');
 
 var React = require('react');
@@ -48389,4 +48450,4 @@ ReactDOM.render(
 );
 //module.exports = App;
 
-},{"./components/checkout/checkoutPage":189,"./components/header":193,"jquery":24,"react":180,"react-dom":27}]},{},[194]);
+},{"./components/checkout/checkoutPage":192,"./components/header":196,"jquery":24,"react":180,"react-dom":27}]},{},[197]);
