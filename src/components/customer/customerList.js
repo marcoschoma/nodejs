@@ -58,8 +58,8 @@ var CustomerList = React.createClass({
 					this.state.selectedCustomer ? 
 					showSelectCustomer.bind(this)() : (
 					<div className="jumbotron">
-						<h2>Bem vindo a AdStore.</h2>
-						<p>Selecione um cliente</p>
+						<h2>Welcome to AdStore</h2>
+						<p>Please select a customer</p>
 					</div>
 				)}
 

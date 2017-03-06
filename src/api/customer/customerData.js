@@ -20,9 +20,5 @@ module.exports = [
 	{
 		id: 5,
 		name: 'Default'
-	},
-	{
-		id: 6,
-		name: 'Novo cliente'
 	}
 ];
