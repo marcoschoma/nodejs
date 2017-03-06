@@ -14,7 +14,7 @@ var Checkout = React.createClass({
 		return {
 			ads: AdApi
 				.getAllAds()
-				.map(ad => {
+				.map(function(ad) {
 					ad.quantity = 0;
 					ad.subTotalPrice = 0;
 					return ad;

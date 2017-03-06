@@ -48132,12 +48132,12 @@ var AdList = React.createClass({displayName: "AdList",
 	componentDidMount: function() {
 		var lookupAd = {};
 		var tmpAds = this.props.ads
-				.map(ad => {
+				.map(function(ad) {
 					ad.quantity = 0;
 					ad.subTotalPrice = 0;
 					return ad;
 				});
-		tmpAds.forEach((ad) => lookupAd[ad.id] = tmpAds.indexOf(ad));
+		tmpAds.forEach(function(ad) { lookupAd[ad.id] = tmpAds.indexOf(ad) });
 
 		this.setState({
 			lookupAd: lookupAd
@@ -48145,8 +48145,8 @@ var AdList = React.createClass({displayName: "AdList",
 	},
 	updateQuantity: function (event) {
 		var id = parseInt(event.target.attributes.getNamedItem('data-id').value, 0)
-		const ads = this.props.ads
-		const quantity = event.target.value
+		var ads = this.props.ads
+		var quantity = event.target.value
 		var newPrice = CheckoutApi.calculate(id, this.props.customerId, quantity);
 
 		ads[this.state.lookupAd[id]].quantity = quantity
@@ -48247,7 +48247,7 @@ var Checkout = React.createClass({displayName: "Checkout",
 		return {
 			ads: AdApi
 				.getAllAds()
-				.map(ad => {
+				.map(function(ad) {
 					ad.quantity = 0;
 					ad.subTotalPrice = 0;
 					return ad;
