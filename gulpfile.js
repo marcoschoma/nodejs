@@ -8,6 +8,11 @@ var reactify = require('reactify');
 var source = require('vinyl-source-stream');
 var concat = require('gulp-concat');
 var lint = require('gulp-eslint');
+var mocha = require('gulp-mocha');
+var babel = require('gulp-babel');
+require('babel-core/register');
+require('babel-preset-react');
+require('babel-polyfill');
 
 var config = {
 	port: 9005,
@@ -17,6 +22,7 @@ var config = {
 		dist: './dist',
 		js: './src/**/*.js',
 		mainJs: './src/main.js',
+		testJs: './src/**/*.test.js',
 		css: [
 			'node_modules/bootstrap/dist/css/bootstrap.min.css',
 			'node_modules/bootstrap/dist/css/bootstrap-theme.min.css'
@@ -72,3 +78,14 @@ gulp.task('watch', function() {
 });
 
 gulp.task('default', ['html', 'js', 'css', 'lint', 'open', 'watch'])
+
+gulp.task('test', function() {
+	return gulp.src([config.paths.testJs], { read: false})
+		//.pipe(babel())
+		.pipe(mocha({
+			reporter: 'spec',
+			require: 'babel-polyfill',
+			compilers: 'js:babel-register'
+		}));
+	console.log('ok, lets test the hellovehere!');
+});
