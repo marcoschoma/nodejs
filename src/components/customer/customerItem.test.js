@@ -40,5 +40,4 @@ describe('Testing CustomerItem', function () {
 		expect(wrapper.events.handleCustomerSelect).toHaveBeenCalled();
 		//expect(wrapper.component.find('button').onClick()).toBe(1);
 	});*/
-	
 });

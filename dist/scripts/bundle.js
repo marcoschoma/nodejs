@@ -48234,13 +48234,14 @@ module.exports = AdItem;
 "use strict";
 
 var React = require('react');
-var CustomerList = require('./../customer/customerList');
+var CustomerList = require('../customer/customerList');
+var SelectedCustomer = require('../customer/selectedCustomer');
 var AdList = require('../ad/adList');
 
 var AdApi = require('../../api/ad/adApi');
-var CheckoutApi = require('../../api/checkout/checkoutApi')
+var CheckoutApi = require('../../api/checkout/checkoutApi');
+var CustomerApi = require('../../api/customer/customerApi');
 var DiscountApi = require('../../api/discount/discountApi');
-
 
 var Checkout = React.createClass({displayName: "Checkout",
 	getInitialState: function() {
@@ -48252,43 +48253,72 @@ var Checkout = React.createClass({displayName: "Checkout",
 					ad.subTotalPrice = 0;
 					return ad;
 				}),
+			customers: CustomerApi.getAllCustomers(),
 			discounts: [],
-			isShowCustomer: true,
+			isShowCustomers: true,
 			isShowOffers: false,
 			isShowAds: false,
-			selectedCustomerId: null
+			selectedCustomer: null
 		};
 	},
-	customerSelectionHasChanged: function(customer) {
+	customerSelectionHasChanged: function(event, arg) {
+		console.log('customerSelectionHasChanged', arg);
+		console.log('customerSelectionHasChanged', event.target);
+		console.log('customerSelectionHasChanged', event.target.value);
+		console.log('customerSelectionHasChanged', event.target.key);
+		var customer = CustomerApi.getCustomerById(event.target.key);
 		this.setState({
 			discounts: customer === null ? [] : DiscountApi.getDiscountByCustomerId(customer.id),
-			isShowCustomer: (customer === null),
+			isShowCustomers: (customer === null),
 			isShowOffers: (customer !== null),
 			isShowAds: (customer !== null),
-			selectedCustomerId: customer ? customer.id : null
+			selectedCustomer: customer,
+			showSelectedCustomer: (customer !== null)
 		});
 	},
-	render: function() {
-		var showAvailableOffers = function(customerId) {
-			if(this.state.isShowOffers === true) {
-				return (
-					React.createElement("div", null, 
-						React.createElement(AdList, {customerId: customerId, ads: this.state.ads, discounts: this.state.discounts})
-					)
-				);
-			}
-		}
-		var showCustomerList = function() {
+	unselectCustomer: function(){
+		this.customerSelectionHasChanged(null);
+	},
+	showCustomerList: function() {
+		if(this.state.isShowCustomers === true) {
 			return (
 				React.createElement("div", {className: "row"}, 
-					React.createElement(CustomerList, {ref: "customerList", onCustomerSelectionChanged: this.customerSelectionHasChanged})
+					React.createElement(CustomerList, {customers: this.state.customers, 
+						onCustomerSelectionChanged: this.customerSelectionHasChanged})
 				)
 			);
 		}
+	},
+	showCustomerSelectionMessage: function () {
+		if(this.state.isShowCustomers === true) {
+			return React.createElement("div", {className: "jumbotron"}, 
+				React.createElement("h2", null, "Welcome to AdStore"), 
+				React.createElement("p", null, "Please select a customer")
+			)
+		}
+	},
+	showSelectedCustomer: function () {
+		if(this.state.showSelectedCustomer) {
+			console.log('this.state.selectedCustomer', this.state.selectedCustomer);
+			return (
+				React.createElement(SelectedCustomer, {selectedCustomer: this.state.selectedCustomer, unselectCustomer: this.unselectCustomer})
+			);
+		}
+	},
+	showAvailableOffers: function(customerId) {
+		if(this.state.isShowOffers === true) {
+			return (
+				React.createElement(AdList, {customerId: this.state.selectedCustomer.customerId, ads: this.state.ads, discounts: this.state.discounts})
+			);
+		}
+	},
+	render: function() {
 		return (
 			React.createElement("div", null, 
-				showCustomerList.bind(this)(), 
-				showAvailableOffers.bind(this)(this.state.selectedCustomerId)
+				 this.showCustomerSelectionMessage(), 
+				 this.showCustomerList(), 
+				 this.showSelectedCustomer(), 
+				 this.showAvailableOffers() 
 			)
 		);
 	}
@@ -48296,7 +48326,7 @@ var Checkout = React.createClass({displayName: "Checkout",
 
 module.exports = Checkout;
 
-},{"../../api/ad/adApi":181,"../../api/checkout/checkoutApi":183,"../../api/discount/discountApi":186,"../ad/adList":189,"./../customer/customerList":194,"react":180}],193:[function(require,module,exports){
+},{"../../api/ad/adApi":181,"../../api/checkout/checkoutApi":183,"../../api/customer/customerApi":184,"../../api/discount/discountApi":186,"../ad/adList":189,"../customer/customerList":194,"../customer/selectedCustomer":195,"react":180}],193:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -48306,14 +48336,11 @@ var CustomerItem = React.createClass({displayName: "CustomerItem",
 		customer: React.PropTypes.object.isRequired,
 		handleCustomerSelect: React.PropTypes.func.isRequired
 	},
-	onButtonClick: function() {
-		this.props.handleCustomerSelect(this.props.customer);
-	},
 	render: function(){
 		return (
 			React.createElement("button", {key: this.props.customer.id, 
 				className: "btn btn-default", 
-				onClick: this.onButtonClick
+				onClick: this.props.handleCustomerSelect
 				}, this.props.customer.name)
 		)
 	}
@@ -48327,73 +48354,28 @@ module.exports = CustomerItem;
 var React = require('react');
 var _ = require('lodash');
 var CustomerItem = require('./customerItem');
-var CustomerApi = require('./../../api/customer/customerApi');
-var SelectedCustomer = require('../customer/selectedCustomer');
 
 var CustomerList = React.createClass({displayName: "CustomerList",
-	getInitialState: function() {
-		return {
-			customers: [],
-			selectedCutomer: null
-		};
+	propTypes: {
+		onCustomerSelectionChanged: React.PropTypes.func.isRequired,
+		customers: React.PropTypes.array.isRequired
 	},
-	componentWillMount: function() {
-		this.setState({
-			customers: CustomerApi.getAllCustomers(),
-			selectedCutomer: null
-		});
-	},
-	getSelectedCustomer: function() {
-		return this.state.selectedCustomer;
-	},
-	setSelectedCustomer: function (customer) {
-		this.setState({
-			selectedCustomer: customer
-		});
-		if(this.props.onCustomerSelectionChanged)
-			this.props.onCustomerSelectionChanged(customer);
-	},
-	unselectCustomer: function(){
-		this.setSelectedCustomer(null);
+	createCustomerItem: function (customer){
+		return (
+			React.createElement("div", {key: 'customerItem_div_'+customer.id, className: "col-xs-2 text-center"}, 
+				React.createElement(CustomerItem, {key: 'customerItem_btn_'+customer.id, 
+					customer: customer, 
+					handleCustomerSelect: this.props.onCustomerSelectionChanged})
+			)
+		)
 	},
 	render: function() {
-		var createCustomerItem = function (customer){
-			return (
-				React.createElement("div", {key: 'customerItem_div_'+customer.id, className: "col-md-2 text-center"}, 
-					React.createElement(CustomerItem, {key: 'customerItem_btn_'+customer.id, 
-						customer: customer, 
-						handleCustomerSelect: this.setSelectedCustomer})
-				)
-			)
-		};
-		var showSelectCustomer = function () {
-			return (
-				React.createElement("div", {className: "jumbotron"}, 
-					React.createElement("h2", null, 
-						"Displaying offers for: ", this.state.selectedCustomer.name
-					), 
-					React.createElement("a", {onClick: this.unselectCustomer, role: "button", alt: "Trocar cliente"}, "change customer")
-				)
-			);
-		}
+		console.log('rendering');
 		return (
-			React.createElement("div", {className: "col-md-12"}, 
-				
-					this.state.selectedCustomer ? 
-					showSelectCustomer.bind(this)() : (
-					React.createElement("div", {className: "jumbotron"}, 
-						React.createElement("h2", null, "Welcome to AdStore"), 
-						React.createElement("p", null, "Please select a customer")
-					)
-				), 
-
-				 !this.state.selectedCustomer ? _.map(this.state.customers, createCustomerItem.bind(this)) : null
-				
+			React.createElement("div", {className: "col-sx-12"}, 
+				 _.map(this.props.customers, this.createCustomerItem) 
 			)
 		);
-	},
-	propTypes: {
-		onCustomerSelectionChanged: React.PropTypes.func
 	}
 });
 
@@ -48401,23 +48383,30 @@ module.exports = CustomerList;
 //<SelectedCustomer selectedCustomer={this.state.selectedCustomer} />
 //<button onClick={this.unselectCustomer} className="btn btn-default" alt="Trocar cliente">{this.state.selectedCustomer.name} </button>
 
-},{"../customer/selectedCustomer":195,"./../../api/customer/customerApi":184,"./customerItem":193,"lodash":25,"react":180}],195:[function(require,module,exports){
-"use strict";
+},{"./customerItem":193,"lodash":25,"react":180}],195:[function(require,module,exports){
+"use strict"
 
-var React = require('react');
+var React = require('react')
 
 var SelectedCustomer = React.createClass({displayName: "SelectedCustomer",
-	render: function() {
-		return (
-			React.createElement("div", null, "Exibindo ofertas para ", this.props.selectedCustomer.name)
-		)
-	},
 	propTypes: {
+		unselectCustomer: React.PropTypes.func.isRequired,
 		selectedCustomer: React.PropTypes.object.isRequired
+	},
+	render: function() {
+		console.log('selectedCustomer', selectedCustomer);
+		return (
+			React.createElement("div", {className: "jumbotron"}, 
+				React.createElement("h2", null, 
+					"Displaying offers for: ", this.props.selectedCustomer.name
+				), 
+				React.createElement("a", {onClick: this.props.unselectCustomer, role: "button", alt: "Trocar cliente"}, "change customer")
+			)
+		)
 	}
-});
+})
 
-module.exports = SelectedCustomer;
+module.exports = SelectedCustomer
 
 },{"react":180}],196:[function(require,module,exports){
 "use strict";
@@ -48443,7 +48432,6 @@ var React = require('react');
 var ReactDOM = require('react-dom')
 var Header = require('./components/header');
 var Checkout = require('./components/checkout/checkoutPage');
-
 
 ReactDOM.render(
 	React.createElement("div", null, React.createElement(Header, null), React.createElement(Checkout, null)), document.getElementById('app')
