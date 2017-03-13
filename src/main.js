@@ -8,4 +8,3 @@ var Checkout = require('./components/checkout/checkoutPage');
 ReactDOM.render(
 	<div><Header /><Checkout /></div>, document.getElementById('app')
 );
-//module.exports = App;

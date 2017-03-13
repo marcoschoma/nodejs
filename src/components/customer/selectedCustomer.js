@@ -5,10 +5,9 @@ var React = require('react')
 var SelectedCustomer = React.createClass({
 	propTypes: {
 		unselectCustomer: React.PropTypes.func.isRequired,
-		selectedCustomer: React.PropTypes.object.isRequired
+		selectedCustomer: React.PropTypes.object
 	},
 	render: function() {
-		console.log('selectedCustomer', selectedCustomer);
 		return (
 			<div className="jumbotron">
 				<h2>

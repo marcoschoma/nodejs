@@ -10,6 +10,7 @@ var CheckoutApi = require('../../api/checkout/checkoutApi')
 var AdList = React.createClass({
 	propTypes: {
 		ads: React.PropTypes.array.isRequired,
+		customerId: React.PropTypes.number.isRequired,
 		discounts: React.PropTypes.array.isRequired
 	},
 	getInitialState: function() {
@@ -46,7 +47,7 @@ var AdList = React.createClass({
 	render: function() {
 		var getDiscountInfo = function(discount) {
 			return (
-				<div><h4 key={'discounts_' + discount.id }>Special offer: { discount.description }</h4></div>
+				<div key={'discount_' + discount.id }><h4 key={'discounts_' + discount.id }>Special offer: { discount.description }</h4></div>
 			);
 		};
 		var createAdItem = function(ad) {

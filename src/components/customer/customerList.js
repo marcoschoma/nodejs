@@ -9,17 +9,19 @@ var CustomerList = React.createClass({
 		onCustomerSelectionChanged: React.PropTypes.func.isRequired,
 		customers: React.PropTypes.array.isRequired
 	},
-	createCustomerItem: function (customer){
+	handleCustomerSelect: function(customer, event) {
+		this.props.onCustomerSelectionChanged(event, customer);
+	},
+	createCustomerItem: function(customer) {
 		return (
 			<div key={'customerItem_div_'+customer.id} className="col-xs-2 text-center">
 				<CustomerItem key={'customerItem_btn_'+customer.id}
 					customer={customer}
-					handleCustomerSelect={this.props.onCustomerSelectionChanged}/>
+					handleCustomerSelect={this.handleCustomerSelect.bind(this, customer)} />
 			</div>
 		)
 	},
 	render: function() {
-		console.log('rendering');
 		return (
 			<div className="col-sx-12">
 				{ _.map(this.props.customers, this.createCustomerItem) }

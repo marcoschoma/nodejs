@@ -23,61 +23,10 @@ var Checkout = React.createClass({
 			customers: CustomerApi.getAllCustomers(),
 			discounts: [],
 			isShowCustomers: true,
-			isShowOffers: false,
+			isShowDiscounts: false,
 			isShowAds: false,
 			selectedCustomer: null
 		};
-	},
-	customerSelectionHasChanged: function(event, arg) {
-		console.log('customerSelectionHasChanged', arg);
-		console.log('customerSelectionHasChanged', event.target);
-		console.log('customerSelectionHasChanged', event.target.value);
-		console.log('customerSelectionHasChanged', event.target.key);
-		var customer = CustomerApi.getCustomerById(event.target.key);
-		this.setState({
-			discounts: customer === null ? [] : DiscountApi.getDiscountByCustomerId(customer.id),
-			isShowCustomers: (customer === null),
-			isShowOffers: (customer !== null),
-			isShowAds: (customer !== null),
-			selectedCustomer: customer,
-			showSelectedCustomer: (customer !== null)
-		});
-	},
-	unselectCustomer: function(){
-		this.customerSelectionHasChanged(null);
-	},
-	showCustomerList: function() {
-		if(this.state.isShowCustomers === true) {
-			return (
-				<div className="row">
-					<CustomerList customers={this.state.customers}
-						onCustomerSelectionChanged={this.customerSelectionHasChanged}/>
-				</div>
-			);
-		}
-	},
-	showCustomerSelectionMessage: function () {
-		if(this.state.isShowCustomers === true) {
-			return <div className="jumbotron">
-				<h2>Welcome to AdStore</h2>
-				<p>Please select a customer</p>
-			</div>
-		}
-	},
-	showSelectedCustomer: function () {
-		if(this.state.showSelectedCustomer) {
-			console.log('this.state.selectedCustomer', this.state.selectedCustomer);
-			return (
-				<SelectedCustomer selectedCustomer={this.state.selectedCustomer} unselectCustomer={this.unselectCustomer} />
-			);
-		}
-	},
-	showAvailableOffers: function(customerId) {
-		if(this.state.isShowOffers === true) {
-			return (
-				<AdList customerId={this.state.selectedCustomer.customerId} ads={this.state.ads} discounts={this.state.discounts} />
-			);
-		}
 	},
 	render: function() {
 		return (
@@ -88,7 +37,52 @@ var Checkout = React.createClass({
 				{ this.showAvailableOffers() }
 			</div>
 		);
-	}
+	},
+	customerSelectionHasChanged: function(event, customer) {
+		this.setState({
+			discounts: !customer ? [] : DiscountApi.getDiscountByCustomerId(customer.id),
+			isShowCustomers: (customer === undefined),
+			isShowDiscounts: (customer !== undefined),
+			isShowAds: (customer !== undefined),
+			isShowSelectedCustomer: (customer !== undefined),
+			selectedCustomer: customer,
+		});
+	},
+	unselectCustomer: function(){
+		this.customerSelectionHasChanged(null);
+	},
+	showCustomerSelectionMessage: function () {
+		if(this.state.isShowCustomers === true) {
+			return <div className="jumbotron">
+				<h2>Welcome to AdStore</h2>
+				<p>Please select a customer</p>
+			</div>
+		}
+	},
+	showCustomerList: function() {
+		if(this.state.isShowCustomers === true) {
+			return (
+				<div className="row">
+					<CustomerList customers={ this.state.customers }
+						onCustomerSelectionChanged={this.customerSelectionHasChanged}/>
+				</div>
+			);
+		}
+	},
+	showSelectedCustomer: function () {
+		if(this.state.isShowSelectedCustomer) {
+			return (
+				<SelectedCustomer selectedCustomer={this.state.selectedCustomer} unselectCustomer={this.unselectCustomer} />
+			);
+		}
+	},
+	showAvailableOffers: function() {
+		if(this.state.isShowDiscounts === true) {
+			return (
+				<AdList customerId={this.state.selectedCustomer.id} ads={this.state.ads} discounts={this.state.discounts} />
+			);
+		}
+	},
 });
 
 module.exports = Checkout;
